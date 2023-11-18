@@ -12,8 +12,6 @@
 const int WINDOW_WIDTH = 600;
 const int WINDOW_HEIGHT = 600;
 
-
-
 class Color {
 public:
     uint8_t r, g, b, a;
@@ -36,6 +34,8 @@ struct Uniform {
 };
 
 
+// Agrega esto al inicio del archivo con las demás variables globales
+std::vector<double> zbuffer(WINDOW_WIDTH * WINDOW_HEIGHT, std::numeric_limits<double>::infinity());
 
 
 glm::mat4 createModelMatrix(glm::vec3 positionInMap, float scale_) {
@@ -166,17 +166,23 @@ void fillTriangle(const glm::vec3& A, const glm::vec3& B, const glm::vec3& C) {
             float gamma = barycentric.z;
 
             if (alpha > 0 && beta > 0 && gamma > 0) {
-                rect.x = x;
-                rect.y = y;
+                // Calcular la coordenada interpolada en Z
+                double interpolatedZ = A.z * alpha + B.z * beta + C.z * gamma;
 
-                // Interpolar el color en función de la intensidad de la luz
-                Color interpolatedColor;
-                interpolatedColor.r = static_cast<uint8_t>(currentColor.r * intensity);
-                interpolatedColor.g = static_cast<uint8_t>(currentColor.g * intensity);
-                interpolatedColor.b = static_cast<uint8_t>(currentColor.b * intensity);
+                // Verificar y actualizar el Z-buffer
+                int bufferIndex = y * WINDOW_WIDTH + x;
+                if (interpolatedZ < zbuffer[bufferIndex]) {
+                    zbuffer[bufferIndex] = interpolatedZ;
 
-                SDL_SetRenderDrawColor(renderer, interpolatedColor.r, interpolatedColor.g, interpolatedColor.b, currentColor.a);
-                SDL_RenderFillRect(renderer, &rect);
+                    // Interpolar el color en función de la intensidad de la luz
+                    Color interpolatedColor;
+                    interpolatedColor.r = static_cast<uint8_t>(currentColor.r * intensity);
+                    interpolatedColor.g = static_cast<uint8_t>(currentColor.g * intensity);
+                    interpolatedColor.b = static_cast<uint8_t>(currentColor.b * intensity);
+
+                    SDL_SetRenderDrawColor(renderer, interpolatedColor.r, interpolatedColor.g, interpolatedColor.b, currentColor.a);
+                    SDL_RenderDrawPoint(renderer, x, y);
+                }
             }
         }
     }
@@ -189,6 +195,9 @@ void render(const std::vector<glm::vec3>& vertex, const Uniform& uniforms) {
     SDL_SetRenderDrawColor(renderer, clearColor.r, clearColor.g, clearColor.b, clearColor.a);
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, currentColor.r, currentColor.g, currentColor.b, currentColor.a);
+    // Agrega esto al inicio de la función render
+    std::fill(zbuffer.begin(), zbuffer.end(), std::numeric_limits<double>::infinity());
+
 
     for (size_t i = 0; i < vertex.size(); i += 3) {
         const glm::vec3& A = vertex[i];
