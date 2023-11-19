@@ -143,7 +143,7 @@ void fillTriangle(const glm::vec3& A, const glm::vec3& B, const glm::vec3& C) {
     glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
 
     // Calcular la dirección de la luz
-    glm::vec3 L = glm::vec3(0, 0, 200.0f);
+    glm::vec3 L = glm::vec3(0, 0, -1200.0f);
     glm::vec3 lightDirection = glm::normalize(L - A);
 
     // Calcular la intensidad de la luz en el triángulo
